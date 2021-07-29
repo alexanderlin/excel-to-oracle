@@ -7,3 +7,4 @@ edition = "2018"
 
 [dependencies]
 calamine = "0.18.0"
+oracle = "0.5.2"
