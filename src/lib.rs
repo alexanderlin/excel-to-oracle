@@ -3,7 +3,7 @@ use calamine::{open_workbook, Xlsx, Reader, DataType};
 use oracle::{Connection, Result};
 
 pub fn read_write()->Vec<Result<String>> {
-    let mut result = Vec::new();
+
     let args: Vec<String> = env::args().collect();
 
     let file = &args[1];
@@ -16,8 +16,9 @@ pub fn read_write()->Vec<Result<String>> {
     println!("In file {}", file);
 
     let mut excel: Xlsx<_> = open_workbook(file).unwrap();
-    //get different sheet names
+    //get different sheet names from excel file
     let sheets = excel.sheet_names().to_owned();
+    //hold all the data read from the excel file
     let mut sheets_data = Vec::new();
     for s in &sheets {
         //flag to make sure only first row has special characters changed
@@ -29,6 +30,7 @@ pub fn read_write()->Vec<Result<String>> {
                 if f == 0{ 
                 for r_item in row {
                     match r_item {
+                        //replace special characters in column names with "_"
                         DataType::String(x) => {
                             let x = x.replace(".", "_");
                             let x = x.replace("-", "_");
@@ -41,22 +43,22 @@ pub fn read_write()->Vec<Result<String>> {
                 f = f + 1;
             }
             else{
+                //for every other row just store the value
                 for r_item in row {
                     match r_item {
                         DataType::String(x) => row_holder.push(x.to_string()),
                         _ => row_holder.push("".to_string()),
-    
                     }
                 }
             }
 
-                data_by_row.push(row_holder);
+            data_by_row.push(row_holder);
             }
-            //println!("{:?}",data_by_row);
         }
         sheets_data.push(data_by_row);
-
     }
+
+    let mut result = Vec::new();
     for (i,s) in sheets.iter().enumerate(){
         result.push(write_to_oracle(s, &mut sheets_data[i], column_capacity, &db_info));
     }
@@ -64,9 +66,9 @@ pub fn read_write()->Vec<Result<String>> {
 }
 
 pub fn write_to_oracle(sheet_name: &str, data_by_row: &mut Vec<Vec<String>>, column_capacity: &str, db_info: &Vec<&String>)->Result<String>{
-    let conn = Connection::connect(db_info[0],db_info[1],db_info[2])?;
 
-    //create the table
+    let conn = Connection::connect(db_info[0],db_info[1],db_info[2])?;
+    //compose create table sql statement
     let mut sql = format!("create table {} ( ",sheet_name);
     for (i,data) in data_by_row[0].clone().iter().enumerate(){
         sql.push_str(&data);
@@ -82,7 +84,9 @@ pub fn write_to_oracle(sheet_name: &str, data_by_row: &mut Vec<Vec<String>>, col
     conn.execute(&sql, &[])?;
     conn.commit()?;
 
+    //compose insert into table sql statement
     let mut sql2 = format!("insert into {} values ( ",sheet_name);
+    //remove the column names and format the sql query with positional parameters
     let row_0 = data_by_row.remove(0);
     for (i,_) in row_0.iter().enumerate(){
         if i+1 >= row_0.len(){
@@ -95,6 +99,7 @@ pub fn write_to_oracle(sheet_name: &str, data_by_row: &mut Vec<Vec<String>>, col
         }
 
     }
+    //bind row values to their positional parameters then execute sql statement for every row in sheet
     let mut stmt = conn.prepare(&sql2,&[])?;
     for row in data_by_row {
         for (i,ri) in row.iter().enumerate() {
