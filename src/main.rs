@@ -1,5 +1,5 @@
-use excel_to_oracle::{read_file};
+use excel_to_oracle::{read_write};
 
 fn main() {
-    println!("{:?}",read_file());
+    println!("{:?}",read_write());
 }
