@@ -1,7 +1,5 @@
-use excel_to_oracle::{read_file, connect_to_oracle};
+use excel_to_oracle::{read_file};
 
 fn main() {
-    read_file();
-    println!("now connecting to oracle database");
-    println!("{:?}",connect_to_oracle());
+    println!("{:?}",read_file());
 }
