@@ -13,7 +13,11 @@ oracle: https://docs.rs/crate/oracle/0.5.2
 cargo run path column_capacity username password database_connection
 ```
 path: path to the excel file to convert with the file included
+
 column_capacity: how much space to allocate to varchar2() when the table is being created
+
 username: username to database
+
 password: password to database
+
 database_connection: connection to database
